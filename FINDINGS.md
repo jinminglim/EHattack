@@ -52,7 +52,16 @@ The admin product/ticket management views are the likely exec sink once reached.
    the upload endpoint characterised first.
 4. **LLM injection (Phase A)** — parallel, slow.
 
+## Session forgery status
+Flask session signing reproduced and validated (tools/flask_session.py). Target
+cookie decodes to `{"user_id": 15}`. SECRET_KEY **not** recovered from rockyou
+(all 14M exhausted) — key is not a common password (long/random or app-specific).
+Session forgery is blocked unless a targeted key list or a leaked key (via another
+chain) recovers it. Pivot to key-free RCE: ticket-photo upload traversal (Chain 5)
+and LLM injection (Phase A).
+
 ## Ruled out
 - Werkzeug debug console (`/console` 404)
 - Mass assignment of role on `/api/account`
 - Source/VCS exposure on the web root
+- SECRET_KEY via rockyou (exhausted, no hit)
