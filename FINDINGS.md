@@ -29,6 +29,18 @@ page (identical 6101B body). Chain 6 (git-dumper / direct source pull) is dead �
 the leaked build artifacts live on the container FS, reachable only via code-exec
 or a file-read primitive.
 
+## Session + admin structure — confirmed 2026-10-24
+
+**Session cookie** = `{"user_id": 15}` (pentest1), Flask-signed. NO role field in
+the cookie → the server resolves role from `user_id` against the DB. Consequence:
+forging `is_admin`/role flags is useless; forging **`user_id` to an admin's id**
+(typically 1) is the attack. Requires cracking `SECRET_KEY` (flask-unsign).
+
+**Admin area** (`/admin/`): 403 to a Customer, 302→/login anon. Existing children
+(403 = present, forbidden): `/admin/tickets`, `/admin/products`. Others (users,
+orders, dashboard, settings, logs, export, report, kb, customers, staff) = 404.
+The admin product/ticket management views are the likely exec sink once reached.
+
 ## Open leads, priority order
 
 1. **`/admin/`** — enumerate it. If it gates on a role/session flag, it's the
