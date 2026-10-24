@@ -60,8 +60,21 @@ Session forgery is blocked unless a targeted key list or a leaked key (via anoth
 chain) recovers it. Pivot to key-free RCE: ticket-photo upload traversal (Chain 5)
 and LLM injection (Phase A).
 
+## Ticket photo upload — characterised (RCE vector ruled out)
+- `POST /api/tickets` (JSON subject/body) → 201 `{"status":"open","ticket_ref":"CUST-NNNNN"}`.
+- Photo route is `POST /api/tickets/{numeric_id}/photo`, field `file`. The id is the
+  DB integer from `data-ticket-id` in /support/tickets (our tickets = 17–20), NOT
+  the ref. Low sequential ids ⇒ ids 1–16 are others'/seeded → IDOR surface.
+- No server-side extension filter (`.php/.py/.html/.svg/.jpeg.php` all 201).
+- BUT stored under a random UUID name (`send_file` serves it back via
+  `/api/tickets/{id}/photo`, `Content-Disposition filename=<32hex>.jpg`) → filename
+  traversal into templates/ is defeated. Bytes returned verbatim (22==22) → no
+  Pillow/image processing → no decode/EXIF/ImageMagick RCE on upload. **Upload is
+  storage only; not a code-exec sink.**
+
 ## Ruled out
 - Werkzeug debug console (`/console` 404)
 - Mass assignment of role on `/api/account`
 - Source/VCS exposure on the web root
 - SECRET_KEY via rockyou (exhausted, no hit)
+- Ticket upload → RCE (random UUID filename; raw passthrough, no processing)
